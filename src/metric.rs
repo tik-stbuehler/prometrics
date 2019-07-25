@@ -8,7 +8,7 @@ pub use aggregated_metrics::{AggregatedCounter, AggregatedGauge, AggregatedHisto
 
 use {ErrorKind, Result};
 use label::Labels;
-use metrics::{Counter, Gauge, Histogram, Summary};
+use metrics::{Counter, Gauge, Histogram, Summary, ObservedCounter};
 
 /// Metric.
 ///
@@ -22,6 +22,7 @@ pub enum Metric {
     Gauge(Gauge),
     Summary(Summary),
     Histogram(Histogram),
+    ObservedCounter(ObservedCounter),
 }
 impl Metric {
     /// Returns the name of this metric.
@@ -31,6 +32,7 @@ impl Metric {
             Metric::Gauge(ref m) => m.metric_name(),
             Metric::Summary(ref m) => m.metric_name(),
             Metric::Histogram(ref m) => m.metric_name(),
+            Metric::ObservedCounter(ref m) => m.metric_name(),
         }
     }
 
@@ -41,6 +43,7 @@ impl Metric {
             Metric::Gauge(_) => MetricKind::Gauge,
             Metric::Summary(_) => MetricKind::Summary,
             Metric::Histogram(_) => MetricKind::Histogram,
+            Metric::ObservedCounter(_) => MetricKind::Counter,
         }
     }
 
@@ -51,6 +54,7 @@ impl Metric {
             Metric::Gauge(ref m) => m.labels(),
             Metric::Summary(ref m) => m.labels(),
             Metric::Histogram(ref m) => m.labels(),
+            Metric::ObservedCounter(ref m) => m.labels(),
         }
     }
 }
@@ -72,6 +76,11 @@ impl From<Histogram> for Metric {
 impl From<Summary> for Metric {
     fn from(f: Summary) -> Self {
         Metric::Summary(f)
+    }
+}
+impl From<ObservedCounter> for Metric {
+    fn from(f: ObservedCounter) -> Self {
+        Metric::ObservedCounter(f)
     }
 }
 
@@ -308,6 +317,11 @@ impl MetricFamily {
                 help: m.help().map(|h| h.to_string()),
                 metrics: Metrics::Histogram(vec![AggregatedHistogram::new(m)]),
             },
+            Metric::ObservedCounter(m) => MetricFamily {
+                name: m.metric_name().clone(),
+                help: m.help().map(|h| h.to_string()),
+                metrics: Metrics::Counter(vec![AggregatedCounter::new_observed(m)]),
+            },
         }
     }
     pub(crate) fn same_family(&self, metric: &Metric) -> bool {
@@ -342,6 +356,14 @@ impl MetricFamily {
             Metric::Histogram(m) => {
                 if let Metrics::Histogram(ref mut v) = self.metrics {
                     let m = AggregatedHistogram::new(m);
+                    if v.last_mut().map_or(true, |x| !x.try_merge(&m)) {
+                        v.push(m);
+                    }
+                }
+            }
+            Metric::ObservedCounter(m) => {
+                if let Metrics::Counter(ref mut v) = self.metrics {
+                    let m = AggregatedCounter::new_observed(m);
                     if v.last_mut().map_or(true, |x| !x.try_merge(&m)) {
                         v.push(m);
                     }

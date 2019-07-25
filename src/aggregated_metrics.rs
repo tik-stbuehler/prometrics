@@ -4,7 +4,7 @@ use std::fmt;
 use bucket::AggregatedCumulativeBuckets;
 use label::Labels;
 use metric::{MetricIdentifier, MetricName, MetricValue};
-use metrics::{Counter, Gauge, Histogram, Summary};
+use metrics::{Counter, Gauge, Histogram, Summary, ObservedCounter};
 use quantile::Quantile;
 use timestamp::Timestamp;
 
@@ -37,6 +37,16 @@ impl AggregatedCounter {
     }
 
     pub(crate) fn new(counter: Counter) -> Self {
+        let value = counter.value();
+        let timestamp = counter.timestamp().get();
+        AggregatedCounter {
+            identifier: counter.metric_identifier().clone(),
+            timestamp,
+            value,
+        }
+    }
+
+    pub(crate) fn new_observed(counter: ObservedCounter) -> Self {
         let value = counter.value();
         let timestamp = counter.timestamp().get();
         AggregatedCounter {
