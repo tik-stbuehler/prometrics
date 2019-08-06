@@ -6,7 +6,7 @@ use std::time::Instant;
 use {Collect, Registry, Result};
 use default_registry;
 use atomic::AtomicF64;
-use label::{Label, Labels, LabelsMut};
+use label::{Label, Labels};
 use metric::{Metric, MetricName, MetricValue};
 use timestamp::{self, Timestamp, TimestampMut};
 
@@ -36,11 +36,6 @@ impl Gauge {
     /// Returns the labels of this gauge.
     pub fn labels(&self) -> &Labels {
         &self.0.labels
-    }
-
-    /// Returns the mutable labels of this gauge.
-    pub fn labels_mut(&mut self) -> LabelsMut {
-        LabelsMut::new(&self.0.labels, None)
     }
 
     /// Returns the timestamp of this gauge.
@@ -283,7 +278,7 @@ mod test {
 
     #[test]
     fn it_works() {
-        let mut gauge = track_try_unwrap!(GaugeBuilder::new("foo").namespace("test").finish());
+        let gauge = track_try_unwrap!(GaugeBuilder::new("foo").namespace("test").finish());
         assert_eq!(gauge.metric_name().to_string(), "test_foo");
         assert_eq!(gauge.value(), 0.0);
 
@@ -291,7 +286,5 @@ mod test {
         assert_eq!(gauge.value(), 2.34);
 
         assert_eq!(gauge.to_string(), "test_foo 2.34");
-        gauge.labels_mut().insert("bar", "baz").unwrap();
-        assert_eq!(gauge.to_string(), r#"test_foo{bar="baz"} 2.34"#);
     }
 }

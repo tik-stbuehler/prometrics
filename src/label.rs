@@ -6,7 +6,6 @@
 //! - [Metric and label naming](https://prometheus.io/docs/practices/naming/)
 use std;
 use std::fmt;
-use std::ops::Deref;
 use atomic_immut::AtomicImmut;
 
 use {ErrorKind, Result};
@@ -150,57 +149,6 @@ impl fmt::Display for Labels {
         }
         write!(f, "}}")?;
         Ok(())
-    }
-}
-
-/// A mutable map of labels (i.e., key-value pairs).
-#[derive(Debug)]
-pub struct LabelsMut<'a> {
-    inner: &'a Labels,
-    reserved: Option<&'static str>,
-}
-impl<'a> LabelsMut<'a> {
-    /// Inserts the label.
-    pub fn insert(&mut self, name: &str, value: &str) -> Result<()> {
-        track_assert_ne!(
-            self.reserved.map(|s| &*s),
-            Some(name),
-            ErrorKind::InvalidInput
-        );
-        let label = track!(Label::new(name, value))?;
-        self.inner.0.update(move |labels| {
-            let mut labels = labels.clone();
-            labels.retain(|l| l.name != label.name);
-            labels.push(label.clone());
-            labels.sort();
-            labels
-        });
-        Ok(())
-    }
-
-    /// Removes the label which has the name `name` if it exists.
-    pub fn remove(&mut self, name: &str) {
-        self.inner
-            .0
-            .update(|labels| labels.iter().filter(|l| l.name != name).cloned().collect());
-    }
-
-    /// Clears the all labels.
-    pub fn clear(&mut self) {
-        self.inner.0.store(Vec::new());
-    }
-
-    pub(crate) fn new(labels: &'a Labels, reserved: Option<&'static str>) -> Self {
-        LabelsMut {
-            inner: labels,
-            reserved,
-        }
-    }
-}
-impl<'a> Deref for LabelsMut<'a> {
-    type Target = Labels;
-    fn deref(&self) -> &Self::Target {
-        self.inner
     }
 }
 

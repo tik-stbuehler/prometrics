@@ -8,7 +8,7 @@ use std::time::{Duration, Instant, SystemTime};
 use {Collect, ErrorKind, Registry, Result};
 use default_registry;
 use atomic::{AtomicF64, AtomicU64};
-use label::{Label, Labels, LabelsMut};
+use label::{Label, Labels};
 use metric::{Metric, MetricName, MetricValue};
 use quantile::Quantile;
 use timestamp::{self, Timestamp, TimestampMut};
@@ -42,11 +42,6 @@ impl Summary {
     /// Returns the user defined labels of this summary.
     pub fn labels(&self) -> &Labels {
         &self.0.labels
-    }
-
-    /// Returns the mutable user defined labels of this summary.
-    pub fn labels_mut(&mut self) -> LabelsMut {
-        LabelsMut::new(&self.0.labels, Some("quantile"))
     }
 
     /// Returns the timestamp of this summary.

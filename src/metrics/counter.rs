@@ -6,7 +6,7 @@ use std::time::Instant;
 use {Collect, ErrorKind, Registry, Result};
 use default_registry;
 use atomic::{AtomicF64, AtomicU64};
-use label::{Label, Labels, LabelsMut};
+use label::{Label, Labels};
 use metric::{Metric, MetricName, MetricValue};
 use timestamp::{self, Timestamp, TimestampMut};
 
@@ -49,11 +49,6 @@ impl Counter {
     /// Returns the labels of this counter.
     pub fn labels(&self) -> &Labels {
         &self.0.labels
-    }
-
-    /// Returns the mutable labels of this counter.
-    pub fn labels_mut(&mut self) -> LabelsMut {
-        LabelsMut::new(&self.0.labels, None)
     }
 
     /// Returns the timestamp of this counter.
@@ -285,7 +280,7 @@ mod test {
 
     #[test]
     fn it_works() {
-        let mut counter = track_try_unwrap!(
+        let counter = track_try_unwrap!(
             CounterBuilder::new("foo_total")
                 .namespace("test")
                 .subsystem("counter")
@@ -307,10 +302,5 @@ mod test {
         assert_eq!(counter.value(), 8.45);
 
         assert_eq!(counter.to_string(), "test_counter_foo_total 8.45");
-        counter.labels_mut().insert("bar", "baz").unwrap();
-        assert_eq!(
-            counter.to_string(),
-            r#"test_counter_foo_total{bar="baz"} 8.45"#
-        );
     }
 }

@@ -8,7 +8,7 @@ use {Collect, ErrorKind, Registry, Result};
 use default_registry;
 use atomic::{AtomicF64, AtomicU64};
 use bucket::{Bucket, CumulativeBuckets};
-use label::{Label, Labels, LabelsMut};
+use label::{Label, Labels};
 use metric::{Metric, MetricName, MetricValue};
 use timestamp::{self, Timestamp, TimestampMut};
 
@@ -40,11 +40,6 @@ impl Histogram {
     /// Returns the user defined labels of this histogram.
     pub fn labels(&self) -> &Labels {
         &self.0.labels
-    }
-
-    /// Returns the mutable user defined labels of this histogram.
-    pub fn labels_mut(&mut self) -> LabelsMut {
-        LabelsMut::new(&self.0.labels, Some("le"))
     }
 
     /// Returns the timestamp of this histogram.
