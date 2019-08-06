@@ -40,7 +40,6 @@
 //! - [Writing client libraries](https://prometheus.io/docs/instrumenting/writing_clientlibs/)
 //! - [Exposition formats](https://prometheus.io/docs/instrumenting/exposition_formats/)
 #![warn(missing_docs)]
-extern crate atomic_immut;
 #[macro_use]
 extern crate lazy_static;
 #[cfg(target_os = "linux")]

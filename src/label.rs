@@ -6,7 +6,7 @@
 //! - [Metric and label naming](https://prometheus.io/docs/practices/naming/)
 use std;
 use std::fmt;
-use atomic_immut::AtomicImmut;
+use std::sync::Arc;
 
 use {ErrorKind, Result};
 
@@ -109,12 +109,12 @@ impl fmt::Display for Label {
 }
 
 /// A map of labels (i.e., key-value pairs).
-#[derive(Debug)]
-pub struct Labels(AtomicImmut<Vec<Label>>);
+#[derive(Debug,Clone)]
+pub struct Labels(Arc<Vec<Label>>);
 impl Labels {
     /// Returns the number of labels contained in this map.
     pub fn len(&self) -> usize {
-        self.0.load().len()
+        self.0.len()
     }
 
     /// Returns `true` if this map has no labels, otherwise `false`.
@@ -129,13 +129,13 @@ impl Labels {
 
     /// Returns an iterator which visiting all labels in this map.
     pub fn iter(&self) -> Iter {
-        let labels = self.0.load();
+        let labels = self.0.clone();
         let inner = unsafe { std::mem::transmute(labels.iter()) };
         Iter { labels, inner }
     }
 
     pub(crate) fn new(labels: Vec<Label>) -> Self {
-        Labels(AtomicImmut::new(labels))
+        Labels(Arc::new(labels))
     }
 }
 impl fmt::Display for Labels {
@@ -155,7 +155,7 @@ impl fmt::Display for Labels {
 /// An iterator over the labels of a `Labels`.
 #[derive(Debug)]
 pub struct Iter<'a> {
-    labels: std::sync::Arc<Vec<Label>>,
+    labels: Arc<Vec<Label>>,
     inner: std::slice::Iter<'a, Label>,
 }
 impl<'a> Iterator for Iter<'a> {
