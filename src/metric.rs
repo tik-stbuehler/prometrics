@@ -1,6 +1,7 @@
 //! Metric.
 use std;
 use std::fmt;
+use std::sync::Arc;
 
 pub use aggregated_metrics::{AggregatedCounter, AggregatedGauge, AggregatedHistogram,
                              AggregatedSummary};
@@ -150,6 +151,33 @@ impl fmt::Display for MetricName {
         }
         write!(f, "{}", self.name)?;
         Ok(())
+    }
+}
+
+/// Name and labels identifiying a single metric.
+#[derive(Debug, Clone)]
+pub struct MetricIdentifier {
+    name: Arc<MetricName>,
+    labels: Labels,
+}
+
+impl MetricIdentifier {
+    /// Create new metric identifier
+    pub fn new(name: Arc<MetricName>, labels: Labels) -> Self {
+        MetricIdentifier {
+            name,
+            labels,
+        }
+    }
+
+    /// Returns the name part of the identifier
+    pub fn name(&self) -> &MetricName {
+        &self.name
+    }
+
+    /// Returns the labels part of the identifier
+    pub fn labels(&self) -> &Labels {
+        &self.labels
     }
 }
 

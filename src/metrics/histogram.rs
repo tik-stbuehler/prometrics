@@ -9,7 +9,7 @@ use default_registry;
 use atomic::{AtomicF64, AtomicU64};
 use bucket::{Bucket, CumulativeBuckets};
 use label::{Label, Labels};
-use metric::{Metric, MetricName, MetricValue};
+use metric::{Metric, MetricIdentifier, MetricName, MetricValue};
 use timestamp::{self, Timestamp, TimestampMut};
 
 /// `Histogram` samples observations (usually things like request durations or response sizes) and
@@ -27,9 +27,14 @@ impl Histogram {
         HistogramBuilder::new(name).finish()
     }
 
+    /// Returns the name and label for this counter.
+    pub fn metric_identifier(&self) -> &MetricIdentifier {
+        &self.0.identifier
+    }
+
     /// Returns the name of this histogram.
     pub fn metric_name(&self) -> &MetricName {
-        &self.0.bucket_name
+        self.0.identifier.name()
     }
 
     /// Returns the help of this histogram.
@@ -39,7 +44,7 @@ impl Histogram {
 
     /// Returns the user defined labels of this histogram.
     pub fn labels(&self) -> &Labels {
-        &self.0.labels
+        self.0.identifier.labels()
     }
 
     /// Returns the timestamp of this histogram.
@@ -272,8 +277,7 @@ impl HistogramBuilder {
                 .expect("Never fails")
         });
         let inner = Inner {
-            bucket_name,
-            labels: Labels::new(labels),
+            identifier: MetricIdentifier::new(Arc::new(bucket_name), Labels::new(labels)),
             help: self.help.clone(),
             timestamp: Timestamp::new(),
             buckets,
@@ -302,8 +306,7 @@ impl Collect for HistogramCollector {
 
 #[derive(Debug)]
 struct Inner {
-    bucket_name: MetricName,
-    labels: Labels,
+    identifier: MetricIdentifier,
     help: Option<String>,
     timestamp: Timestamp,
     buckets: Vec<Bucket>,

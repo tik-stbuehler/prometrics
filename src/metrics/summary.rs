@@ -9,7 +9,7 @@ use {Collect, ErrorKind, Registry, Result};
 use default_registry;
 use atomic::{AtomicF64, AtomicU64};
 use label::{Label, Labels};
-use metric::{Metric, MetricName, MetricValue};
+use metric::{Metric, MetricIdentifier, MetricName, MetricValue};
 use quantile::Quantile;
 use timestamp::{self, Timestamp, TimestampMut};
 
@@ -29,9 +29,14 @@ impl Summary {
         SummaryBuilder::new(name, window).finish()
     }
 
+    /// Returns the name and label for this counter.
+    pub fn metric_identifier(&self) -> &MetricIdentifier {
+        &self.0.identifier
+    }
+
     /// Returns the name of this summary.
     pub fn metric_name(&self) -> &MetricName {
-        &self.0.quantile_name
+        self.0.identifier.name()
     }
 
     /// Returns the help of this summary.
@@ -41,7 +46,7 @@ impl Summary {
 
     /// Returns the user defined labels of this summary.
     pub fn labels(&self) -> &Labels {
-        &self.0.labels
+        self.0.identifier.labels()
     }
 
     /// Returns the timestamp of this summary.
@@ -291,8 +296,7 @@ impl SummaryBuilder {
         )?;
         quantiles.sort_by(|a, b| a.as_f64().partial_cmp(&b.as_f64()).expect("Never fails"));
         let inner = Inner {
-            quantile_name,
-            labels: Labels::new(labels),
+            identifier: MetricIdentifier::new(Arc::new(quantile_name), Labels::new(labels)),
             help: self.help.clone(),
             timestamp: Timestamp::new(),
             window: self.window,
@@ -323,8 +327,7 @@ impl Collect for SummaryCollector {
 
 #[derive(Debug)]
 struct Inner {
-    quantile_name: MetricName,
-    labels: Labels,
+    identifier: MetricIdentifier,
     help: Option<String>,
     timestamp: Timestamp,
     window: Duration,

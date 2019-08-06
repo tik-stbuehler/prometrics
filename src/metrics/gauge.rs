@@ -7,7 +7,7 @@ use {Collect, Registry, Result};
 use default_registry;
 use atomic::AtomicF64;
 use label::{Label, Labels};
-use metric::{Metric, MetricName, MetricValue};
+use metric::{Metric, MetricIdentifier, MetricName, MetricValue};
 use timestamp::{self, Timestamp, TimestampMut};
 
 /// `Gauge` is a metric that represents a single numerical value that can arbitrarily go up and down.
@@ -23,9 +23,14 @@ impl Gauge {
         GaugeBuilder::new(name).finish()
     }
 
+    /// Returns the name and label for this counter.
+    pub fn metric_identifier(&self) -> &MetricIdentifier {
+        &self.0.identifier
+    }
+
     /// Returns the name of this gauge.
     pub fn metric_name(&self) -> &MetricName {
-        &self.0.name
+        self.0.identifier.name()
     }
 
     /// Returns the help of this gauge.
@@ -35,7 +40,7 @@ impl Gauge {
 
     /// Returns the labels of this gauge.
     pub fn labels(&self) -> &Labels {
-        &self.0.labels
+        self.0.identifier.labels()
     }
 
     /// Returns the timestamp of this gauge.
@@ -237,8 +242,7 @@ impl GaugeBuilder {
                 .collect::<Result<_>>()
         )?;
         let inner = Inner {
-            name,
-            labels: Labels::new(labels),
+            identifier: MetricIdentifier::new(Arc::new(name), Labels::new(labels)),
             help: self.help.clone(),
             timestamp: Timestamp::new(),
             value: AtomicF64::new(self.initial_value),
@@ -265,8 +269,7 @@ impl Collect for GaugeCollector {
 
 #[derive(Debug)]
 struct Inner {
-    name: MetricName,
-    labels: Labels,
+    identifier: MetricIdentifier,
     help: Option<String>,
     timestamp: Timestamp,
     value: AtomicF64,

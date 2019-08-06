@@ -7,7 +7,7 @@ use {Collect, ErrorKind, Registry, Result};
 use default_registry;
 use atomic::{AtomicF64, AtomicU64};
 use label::{Label, Labels};
-use metric::{Metric, MetricName, MetricValue};
+use metric::{Metric, MetricIdentifier, MetricName, MetricValue};
 use timestamp::{self, Timestamp, TimestampMut};
 
 /// `Counter` is a cumulative metric that represents a single numerical value that only ever goes up.
@@ -36,9 +36,14 @@ impl Counter {
         CounterBuilder::new(name).finish()
     }
 
+    /// Returns the name and label for this counter.
+    pub fn metric_identifier(&self) -> &MetricIdentifier {
+        &self.0.identifier
+    }
+
     /// Returns the name of this counter.
     pub fn metric_name(&self) -> &MetricName {
-        &self.0.name
+        self.0.identifier.name()
     }
 
     /// Returns the help of this counter.
@@ -48,7 +53,7 @@ impl Counter {
 
     /// Returns the labels of this counter.
     pub fn labels(&self) -> &Labels {
-        &self.0.labels
+        self.0.identifier.labels()
     }
 
     /// Returns the timestamp of this counter.
@@ -199,8 +204,7 @@ impl CounterBuilder {
                 .collect::<Result<_>>()
         )?;
         let inner = Inner {
-            name,
-            labels: Labels::new(labels),
+            identifier: MetricIdentifier::new(Arc::new(name), Labels::new(labels)),
             help: self.help.clone(),
             timestamp: Timestamp::new(),
             value: Value::new(),
@@ -227,8 +231,7 @@ impl Collect for CounterCollector {
 
 #[derive(Debug)]
 struct Inner {
-    name: MetricName,
-    labels: Labels,
+    identifier: MetricIdentifier,
     help: Option<String>,
     timestamp: Timestamp,
     value: Value,

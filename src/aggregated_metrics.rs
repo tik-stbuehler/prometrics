@@ -3,7 +3,7 @@ use std::fmt;
 
 use bucket::AggregatedCumulativeBuckets;
 use label::Labels;
-use metric::{MetricName, MetricValue};
+use metric::{MetricIdentifier, MetricName, MetricValue};
 use metrics::{Counter, Gauge, Histogram, Summary};
 use quantile::Quantile;
 use timestamp::Timestamp;
@@ -11,19 +11,19 @@ use timestamp::Timestamp;
 /// A metric for aggregating counters that have the same name and labels.
 #[derive(Debug, Clone)]
 pub struct AggregatedCounter {
-    inner: Counter,
+    identifier: MetricIdentifier,
     timestamp: Option<i64>,
     value: f64,
 }
 impl AggregatedCounter {
     /// Returns the name of this metric.
     pub fn metric_name(&self) -> &MetricName {
-        self.inner.metric_name()
+        self.identifier.name()
     }
 
     /// Returns the labels of this metric.
     pub fn labels(&self) -> &Labels {
-        self.inner.labels()
+        self.identifier.labels()
     }
 
     /// Returns the latest timestamp among the counters in this aggregation.
@@ -40,7 +40,7 @@ impl AggregatedCounter {
         let value = counter.value();
         let timestamp = counter.timestamp().get();
         AggregatedCounter {
-            inner: counter,
+            identifier: counter.metric_identifier().clone(),
             timestamp,
             value,
         }
@@ -75,19 +75,19 @@ impl fmt::Display for AggregatedCounter {
 /// A metric for aggregating gauges that have the same name and labels.
 #[derive(Debug, Clone)]
 pub struct AggregatedGauge {
-    inner: Gauge,
+    identifier: MetricIdentifier,
     timestamp: Option<i64>,
     value: f64,
 }
 impl AggregatedGauge {
     /// Returns the name of this metric.
     pub fn metric_name(&self) -> &MetricName {
-        self.inner.metric_name()
+        self.identifier.name()
     }
 
     /// Returns the labels of this metric.
     pub fn labels(&self) -> &Labels {
-        self.inner.labels()
+        self.identifier.labels()
     }
 
     /// Returns the latest timestamp among the counters in this aggregation.
@@ -104,7 +104,7 @@ impl AggregatedGauge {
         let value = gauge.value();
         let timestamp = gauge.timestamp().get();
         AggregatedGauge {
-            inner: gauge,
+            identifier: gauge.metric_identifier().clone(),
             timestamp,
             value,
         }
